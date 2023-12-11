@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "Live Preview",
+			"workspacePath": "/home/aniket/Desktop/gst_backend_project/gst_backend_project",
+			"problemMatcher": [],
+			"label": "Live Preview: Run Server"
+		}
+	]
+}

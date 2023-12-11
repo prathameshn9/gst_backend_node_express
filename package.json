@@ -1,0 +1,44 @@
+{
+  "name": "gst-backend-project",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "bson-objectid": "^2.0.4",
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "country-data": "^0.0.31",
+    "crypto-js": "^4.1.1",
+    "debug": "~2.6.9",
+    "dotenv": "^16.3.1",
+    "express": "~4.16.1",
+    "express-cache-response-directive": "^1.1.0",
+    "express-validator": "^7.0.1",
+    "fast-csv": "^4.3.6",
+    "fast-levenshtein": "^3.0.0",
+    "fs": "^0.0.1-security",
+    "fuse.js": "^6.6.2",
+    "fuzzywuzzy": "^0.1.0",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "json": "^11.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "jwk-to-pem": "^2.0.5",
+    "libphonenumber-js": "^1.10.37",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "mongoose": "5.13.0",
+    "morgan": "~1.9.1",
+    "multer": "^1.4.5-lts.1",
+    "natural": "^6.5.0",
+    "pem": "^1.14.8",
+    "string-similarity": "^4.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
