@@ -1,6 +1,8 @@
 require('dotenv').config();
 var express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+
 // const cacheResponseDirective = require('express-cache-response-directive');
 const bodyParser = require('body-parser');
 
@@ -26,6 +28,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 // app.use(cacheResponseDirective());
 app.use(bodyParser.json());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable contentSecurityPolicy if not needed
+    cacheControl: {
+      directives: {
+        maxAge: 3600, // set the max-age
+        mustRevalidate: true, // add must-revalidate
+      },
+    },
+  })
+);
 
 app.use((req, res, next) => {
   // Middleware logic here

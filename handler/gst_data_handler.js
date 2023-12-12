@@ -1661,7 +1661,11 @@ const getGstin= (batchObjectId, res, groupObjectId) => {
       data.forEach(element => {
         gstInList.push(element.gstIn)
       });
-      errors.render(gstInList, res, 200);
+      // Create a Set to store unique values
+      const uniqueSet = new Set(gstInList);
+      // Convert the Set back to an array
+      const uniqueArray = Array.from(uniqueSet);
+      errors.render(uniqueArray, res, 200);
     } else {
       errors.render({}, res, 200);
     }
@@ -1694,8 +1698,8 @@ const getGstin= (batchObjectId, res, groupObjectId) => {
 
 
 
-const approveGstData = (batchObjectId, res, matchedUserId) => {
-  gstRepo.approveGstData(batchObjectId, matchedUserId)
+const approveGstData = async (batchObjectId, res, matchedUserId, type) => {
+  await gstRepo.approveGstData(batchObjectId, matchedUserId, type)
 }
 
 function calculateSumWithNaNHandling(data, property, regex) {

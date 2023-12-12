@@ -131,14 +131,14 @@ const setDataTwoTemplate = async (
     $set: {
       gstInData: templateOneData,
       gstInDataLength: templateOneLength,
-      comapared: true
+      compared: true
     },
   };
   update1 = {
     $set: {
       gstInData: templateTwoData,
       gstInDataLength: templateTwoLength,
-      comapared: true
+      compared: true
     },
   };
 
@@ -168,7 +168,7 @@ const setDataTempOne = async (
     $set: {
       gstInData: templateOneData,
       gstInDataLength: templateOneLength,
-      comapared: true
+      compared: true
     },
   };
   // update1 = {
@@ -202,7 +202,7 @@ const setDataTempTwo = async (gstIn, templateTwoData, batchObjectId) => {
   update1 = {
     $set: {
       gstInData: templateTwoData,
-      comapared: true
+      compared: true
     },
   };
 
@@ -1013,7 +1013,7 @@ const updateNumbers = (batchObjectId, type) => {
 }
 
 const getBatchId = (month, year, type, clientObjectId, groupObjectId) => {
-  // //console.log(typeof(clientObjectId))
+  //console.log(typeof(clientObjectId))
   const filter = {
     month: month,
     year: year,
@@ -1024,8 +1024,8 @@ const getBatchId = (month, year, type, clientObjectId, groupObjectId) => {
   // //console.log(filter)
   project = {
     batchId: 1,
-    comapared: 1,
-    isAproved: 1,
+    compared: 1,
+    isApproved: 1,
     _id: 0
   }
   if (type == "templateOne") {
@@ -1245,20 +1245,29 @@ const setProbabilityData = async (batchObjectId, data, type) => {
 }
 
 
-const approveGstData = (batchObjectId, matchedUserId) => {
+const approveGstData = async (batchObjectId, matchedUserId) => {
   const filter = {
     "batchId": batchObjectId,
     "isActive": true,
     "isApproved": false
   }
-  update = {
-    "$set": {
-      "isApprovedUserId": matchedUserId,
-      "isApproved": true
+  if (type == "approve") {
+    update = {
+      "$set": {
+        "isApprovedUserId": matchedUserId,
+        "isApproved": true
+      }
+    }
+  } else {
+    update = {
+      "$set": {
+        "isApprovedUserId": matchedUserId,
+        "isApproved": false
+      }
     }
   }
-  template1.updateOne(filter, update)
-  template2.updateOne(filter, update)
+  await template1.updateMany(filter, update)
+  await template2.updateMany(filter, update)
 }
 
 

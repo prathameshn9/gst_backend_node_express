@@ -764,10 +764,12 @@ const probabilityAdd = (req, res) => {
   gstHandler.compareGstDataNewProbability(batchObjectId, res);
 };
 
-const approveGstData = (req, res) => {
+const approveGstData = async (req, res) => {
   batchObjectId = helper.objectId(req.params.batch_id);
+  type = req.query.type
   const matchedUserId = req.userData["_id"];
-  gstHandler.approveGstData(batchObjectId, res, matchedUserId);
+  await gstHandler.approveGstData(batchObjectId, res, matchedUserId, type);
+  res.status(200).send("Data Has Been " + type);
 };
 
 const getGstin = (req, res) => {
@@ -820,7 +822,7 @@ const deleteOldData = async (req, res) => {
   groupObjectId = helper.objectId(req.query.groupId);
   batchObjectId = helper.objectId(req.params.batch_id);
   await gstRepo.updateIsActiveFalse(type, clientObjectId, groupObjectId, batchObjectId)
-  res.status(200).send("Delete Old Template Data batchId " + batchId +" type "+type);
+  res.status(200).send("Delete Old Template Data batchId " + req.params.batch_id +" type "+type);
 }
 module.exports = {
   gstData,

@@ -23,6 +23,7 @@
     "fs": "^0.0.1-security",
     "fuse.js": "^6.6.2",
     "fuzzywuzzy": "^0.1.0",
+    "helmet": "^7.1.0",
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "json": "^11.0.0",
