@@ -185,7 +185,9 @@ const addNew = async (res, data, month, year, type, clientObjectId, groupObjectI
 const compareGstData = async (batchObjectId, res) => {
   try {
     const tolerance = 1;
-    let commonMatched = 0
+    let commonMatched = 0;
+    let comparedPurchaseNumber = 0; 
+    let comparedTwoBNumber = 0;
     //get data from db
     // Get data from the database
     const gstData = await gstRepo.gstTempleteData(batchObjectId);
@@ -282,6 +284,8 @@ const compareGstData = async (batchObjectId, res) => {
                     templateOneData.push(templateOneInvoiceData);
                     templateTwoData.push(templateTwoInvoiceData);
                     matched = true;
+                    comparedPurchaseNumber += 1
+                    comparedTwoBNumber += 1
 
                     // if (count.count == 5) {
                     //   templateTwoInvoiceData.allMatched = true;
@@ -400,7 +404,10 @@ const compareGstData = async (batchObjectId, res) => {
      
      
     });
-    return Promise.resolve();
+    return Promise.resolve({
+      comparedPurchaseNumber, 
+      comparedTwoBNumber
+    });
   } catch (error) {
     // Handle any errors that occurred during execution
     console.error(error);
@@ -518,6 +525,8 @@ function checkOneGreaterOther(
       templateTwoInvoiceData.matched = true;
       templateTwoInvoiceData.referenceTemplateId = templeteId;
       templateTwoData.push(templateTwoInvoiceData);
+      comparedPurchaseNumber += 1
+      comparedTwoBNumber += 1
 
       // Use splice inside the for loop.
       tempTwoInvoiceData[invoiceNumber].splice(index_1, 1);
@@ -562,6 +571,8 @@ function checkOneGreaterOther(
             templateTwoInvoiceData.matched = true;
             templateTwoInvoiceData.allMatched = true;
             templateOneInvoiceData.allMatched = true;
+            comparedPurchaseNumber += 1
+            comparedTwoBNumber += 1
             // if (count.count == 5) {
             //   templateTwoInvoiceData.allMatched = true;
             //   templateOneInvoiceData.allMatched = true;
@@ -661,10 +672,10 @@ function checkAllEqual(element_1, element, tolerance) {
 
 const compareGstDataNew = async (batchObjectId, res) => {
   try {
-    await compareGstData(batchObjectId); // Wait for the comparison to finish
+    const { comparedPurchaseNumber, comparedTwoBNumber } = await compareGstData(batchObjectId); // Wait for the comparison to finish
 
     // Send the response with status code 201 after the comparison is completed
-    res.status(201).json({ message: "Data comparison completed successfully." });
+    res.status(201).json({ message: "Data comparison completed successfully.", purchaseRegister: comparedPurchaseNumber, twobRegister: comparedTwoBNumber});
   } catch (error) {
     // If there was an error during execution, send an error response
     res.status(500).json({ error: "An error occurred during data comparison." });
