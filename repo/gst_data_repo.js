@@ -60,7 +60,7 @@ const gstTempleteTwoData = (batchObjectId, gstIn, invoiceNumber) => {
     updatedAt: 0,
     isActive: 0,
   };
-  // //console.log(template2.find(filter, {projection: project, sort: {_id: 1}}).toArray())
+  // ////console.log(template2.find(filter, {projection: project, sort: {_id: 1}}).toArray())
   return template2
     .find(filter, { projection: project, sort: { _id: 1 } })
     .toArray();
@@ -127,14 +127,14 @@ const setDataTwoTemplate = async (
     gstIn: gstIn,
     isActive: true,
   };
-  update = {
+  let update = {
     $set: {
       gstInData: templateOneData,
       gstInDataLength: templateOneLength,
       compared: true
     },
   };
-  update1 = {
+  let update1 = {
     $set: {
       gstInData: templateTwoData,
       gstInDataLength: templateTwoLength,
@@ -143,8 +143,8 @@ const setDataTwoTemplate = async (
   };
 
   try {
-   await  template1.updateOne(filter, update);
-   await template2.updateOne(filter, update1);
+    await template1.updateOne(filter, update);
+    await template2.updateOne(filter, update1);
     // return [...templateOneData, ...templateTwoData];
   } catch (error) {
     // Handle error
@@ -164,7 +164,7 @@ const setDataTempOne = async (
     gstIn: gstIn,
     isActive: true,
   };
-  update = {
+  let update = {
     $set: {
       gstInData: templateOneData,
       gstInDataLength: templateOneLength,
@@ -199,7 +199,7 @@ const setDataTempTwo = async (gstIn, templateTwoData, batchObjectId) => {
   //     gstInData: templateOneData,
   //   },
   // };
-  update1 = {
+  let update1 = {
     $set: {
       gstInData: templateTwoData,
       compared: true
@@ -208,7 +208,7 @@ const setDataTempTwo = async (gstIn, templateTwoData, batchObjectId) => {
 
   try {
     //   template1.updateOne(filter, update);
-   await template2.updateOne(filter, update1);
+    await template2.updateOne(filter, update1);
     // return [...templateOneData, ...templateTwoData];
   } catch (error) {
     // Handle error
@@ -266,10 +266,10 @@ const gstDataSet = (
   } else {
     update4;
   }
-  // //console.log("filter1" ,filter1)
-  // //console.log("filter2" ,filter2)
-  // //console.log("up3" ,update3)
-  // //console.log("up42" ,update4)
+  // ////console.log("filter1" ,filter1)
+  // ////console.log("filter2" ,filter2)
+  // ////console.log("up3" ,update3)
+  // ////console.log("up42" ,update4)
   template1.updateOne(filter1, update3);
   return template2.updateOne(filter2, update4);
 };
@@ -842,7 +842,7 @@ const partialMatched = async (batchObjectId) => {
 //     isActive: 0,
 //   };
 //   if (type == "templateOne") {
-    
+
 //     return await template1
 //       .find(filter, { projection: project, sort: { _id: 1 } })
 //       .toArray();
@@ -865,7 +865,7 @@ const getTemplateData = async (batchObjectId, type, batchSize, totalLimit) => {
       },
     },
     {
-      $unwind: "$gstInData", 
+      $unwind: "$gstInData",
     },
     {
       $project: {
@@ -881,17 +881,18 @@ const getTemplateData = async (batchObjectId, type, batchSize, totalLimit) => {
   ];
 
   const cursor = collection.aggregate(pipeline, { batchSize: batchSize });
- 
+
   try {
     const results = [];
-   
+
     while (await cursor.hasNext()) {
-      //  console.log(await cursor.hasNext())
+      //  //console.log(await cursor.hasNext())
       const doc = await cursor.next();
-      // console.log(doc)
+      // //console.log(doc)
       if (!doc) {
         break;
       }
+      //console.log(doc)
       results.push(doc);
     }
     return results;
@@ -907,7 +908,7 @@ const getTemplateData = async (batchObjectId, type, batchSize, totalLimit) => {
 //     "isActive": true,
 //     "gstInData.editId": editId
 //   }
-//   // //console.log(filter)
+//   // ////console.log(filter)
 //   update = {
 //     "$set":{
 //       "gstInData.$.allMatched": true,
@@ -930,7 +931,7 @@ const matchData = (gstIn, editId, referenceTemplateId, newInvoiceNumber, type, b
     "isActive": true,
     "gstInData.editId": editId
   }
-  // //console.log(manualMatched)
+  // ////console.log(manualMatched)
   if (type == "templateOne") {
     if (manualMatched == true) {
       update = {
@@ -959,7 +960,7 @@ const matchData = (gstIn, editId, referenceTemplateId, newInvoiceNumber, type, b
     }
 
   } else {
-    //console.log(manualMatched)
+    ////console.log(manualMatched)
     if (manualMatched == true) {
       update = {
         "$set": {
@@ -988,8 +989,8 @@ const matchData = (gstIn, editId, referenceTemplateId, newInvoiceNumber, type, b
 
   }
 
-  // //console.log(filter)
-  // //console.log(update)
+  // ////console.log(filter)
+  // ////console.log(update)
   if (type == "templateOne") {
     template1.updateOne(filter, update)
   } else {
@@ -1013,7 +1014,7 @@ const updateNumbers = (batchObjectId, type) => {
 }
 
 const getBatchId = (month, year, type, clientObjectId, groupObjectId) => {
-  //console.log(typeof(clientObjectId))
+  ////console.log(typeof(clientObjectId))
   const filter = {
     month: month,
     year: year,
@@ -1021,11 +1022,12 @@ const getBatchId = (month, year, type, clientObjectId, groupObjectId) => {
     groupId: groupObjectId,
     isActive: true,
   }
-  // //console.log(filter)
+  // ////console.log(filter)
   project = {
     batchId: 1,
     compared: 1,
     isApproved: 1,
+    totalDataImported: 1,
     _id: 0
   }
   if (type == "templateOne") {
@@ -1188,7 +1190,7 @@ const getAllMisMatchedDataNew = async (batchObjectId, gstIn) => {
     let templateTwoData = await template2
       .aggregate(pipeline)
       .toArray();
-    //console.log(templateTwoData)
+    ////console.log(templateTwoData)
     return [...templateOneData, ...templateTwoData];
   } catch (error) {
     // Handle error
@@ -1205,7 +1207,7 @@ const updateProbability = async (batchObjectId, gstIn) => {
     isActive: true,
     probabilityMatched: false,
   }
-  // console.log(filter)
+  // //console.log(filter)
   update = {
     "$set": {
       probabilityMatched: true
@@ -1224,14 +1226,14 @@ const setProbabilityData = async (batchObjectId, data, type) => {
     "gstIn": data.gstIn,
     "gstInData.editId": data.editId
   }
-  // console.log(filter, type)
-  // console.log(data)
+  // //console.log(filter, type)
+  // //console.log(data)
   update = {
     "$set": {
       "gstInData.$": data
     }
   }
-  
+
   try {
     if (type == "templateOne") {
       template1.updateOne(filterNew, update)
@@ -1240,7 +1242,7 @@ const setProbabilityData = async (batchObjectId, data, type) => {
     }
 
   } catch (error) {
-    //console.log(error)
+    ////console.log(error)
   }
 }
 
@@ -1268,6 +1270,106 @@ const approveGstData = async (batchObjectId, matchedUserId) => {
   }
   await template1.updateMany(filter, update)
   await template2.updateMany(filter, update)
+}
+
+const getUnMatcheData = async (batchObjectId) => {
+  try {
+    const filter = {
+      batchId: batchObjectId,
+      isActive: true,
+      $and: [
+        { "gstInData.allMatched": false },
+        {
+          "$or": [
+            { "gstInData.igstMatched": false },
+            { "gstInData.cgstMatched": false },
+            { "gstInData.sgstMatched": false },
+            { "gstInData.invoiceNumberMatched": false },
+            { "gstInData.gstInMatched": false },
+            {
+              $or: [
+                { "gstInData.probable": { $eq: ["$$this.probable", ""] } },
+                { "gstInData.probable": { $exists: false } },
+              ]
+            },
+            {
+              $or: [
+                { "gstInData.manualMatched": { $eq: ["$$this.manualMatched", ""] } },
+                { "gstInData.manualMatched": { $exists: false } },
+              ]
+            },
+            // Other conditions...
+          ]
+        }
+      ]
+    };
+    const addFields = {
+      gstInData: {
+        $filter: {
+          input: "$gstInData",
+          cond: {
+            $and: [
+              { $eq: ["$$this.allMatched", false] },
+              {
+                $or: [
+                  { $eq: ["$$this.igstMatched", false] },
+                  { $eq: ["$$this.cgstMatched", false] },
+                  { $eq: ["$$this.sgstMatched", false] },
+                  { $eq: ["$$this.invoiceNumberMatched", false] },
+                  { $eq: ["$$this.gstInMatched", false] },
+                  {
+                    $or: [
+                      { $eq: ["$$this.probable", ""] },
+                      { $eq: ["$$this.probable", { $exists: false }] },
+                    ]
+                  },
+                  {
+                    $or: [
+                      { $eq: ["$$this.manualMatched", ""] },
+                      { $eq: ["$$this.manualMatched", { $exists: false }] },
+                    ]
+                  },
+                  // Other conditions...
+                ]
+              }
+            ]
+          },
+        },
+      },
+    };
+    const project = {
+      _id: 0,
+      batchId: 0,
+      month: 0,
+      year: 0,
+      gstInDataLength: 0,
+      isApproved: 0,
+      probabilityMatched: 0,
+      probabilityExists: 0,
+      manualExists: 0,
+      submitted: 0,
+      probableVisited: 0,
+      compared: 0,
+      manualVisited: 0
+
+    };
+    const pipeline = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+    ];
+    const pipeline2 = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+    ];
+    let templateOneData = await template1.aggregate(pipeline).toArray();
+    let templateTwoData = await template2.aggregate(pipeline2).toArray();
+    return [...templateOneData, ...templateTwoData];
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "An error occurred while fetching fee payments." });
+  }
 }
 
 
@@ -1315,7 +1417,7 @@ const unMatchData = async (gstIn, editId, newInvoiceNumber, type, batchObjectId,
 //     "probabilityExists": true,
 //     "submitted": false
 //   }
-//   // ////console.log(filter)
+//   // //////console.log(filter)
 //   let project = {
 //     "gstIn": 1,
 //     "type": 1,
@@ -1341,6 +1443,7 @@ const getGstin = async (batchObjectId) => {
     const filter = {
       batchId: batchObjectId,
       isActive: true,
+      probabilityExists: true,
       $and: [
         { "gstInData.allMatched": false },
         {
@@ -1350,6 +1453,7 @@ const getGstin = async (batchObjectId) => {
             { "gstInData.sgstMatched": false },
             { "gstInData.invoiceNumberMatched": false },
             { "gstInData.gstInMatched": false },
+            { "gstInData.probable": { "$exists": false } },
             // {"gstInData.dateMatched": false},
           ]
         }
@@ -1370,6 +1474,161 @@ const getGstin = async (batchObjectId) => {
                   { $eq: ["$$this.sgstMatched", false] },
                   { $eq: ["$$this.invoiceNumberMatched", false] },
                   { $eq: ["$$this.gstInMatched", false] },
+                  { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+                  // { $eq: ["$$this.dateMatched", false] },
+                ]
+              }
+            ]
+          },
+        },
+      },
+    };
+    const project = {
+      _id: 0,
+      gstIn: 1,
+      probableVisited: 1
+    };
+    const pipeline = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+      //{ $sort: { "gstInData.templeteId": 1 } },
+    ];
+    const pipeline2 = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+      //{ $sort: { "gstInData.referenceTemplateId": 1 } },
+    ];
+    let templateOneData = await template1.aggregate(pipeline).toArray();
+    let templateTwoData = await template2.aggregate(pipeline2).toArray();
+    // return comapreData(templateOneData, templateTwoData)
+    return [...templateOneData, ...templateTwoData];
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while fetching fee payments." });
+  }
+};
+
+const getGstinManual = async (batchObjectId) => {
+  try {
+    const filter = {
+      batchId: batchObjectId,
+      isActive: true,
+      manualExists: true,
+      $and: [
+        { "gstInData.allMatched": false },
+        {
+          "$or": [
+            { "gstInData.igstMatched": false },
+            { "gstInData.cgstMatched": false },
+            { "gstInData.sgstMatched": false },
+            { "gstInData.invoiceNumberMatched": false },
+            { "gstInData.gstInMatched": false },
+            { "gstInData.probable": { "$exists": false } },
+
+            // {"gstInData.dateMatched": false},
+          ]
+        }
+
+      ]
+    };
+    const addFields = {
+      gstInData: {
+        $filter: {
+          input: "$gstInData",
+          cond: {
+            $and: [
+              { $eq: ["$$this.allMatched", false] },
+              {
+                $or: [
+                  { $eq: ["$$this.igstMatched", false] },
+                  { $eq: ["$$this.cgstMatched", false] },
+                  { $eq: ["$$this.sgstMatched", false] },
+                  { $eq: ["$$this.invoiceNumberMatched", false] },
+                  { $eq: ["$$this.gstInMatched", false] },
+                  { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+
+                  // { $eq: ["$$this.dateMatched", false] },
+                ]
+              }
+            ]
+          },
+        },
+      },
+    };
+    const project = {
+      _id: 0,
+      gstIn: 1,
+      manualVisited: 1
+    };
+    const pipeline = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+      //{ $sort: { "gstInData.templeteId": 1 } },
+    ];
+    const pipeline2 = [
+      { $match: filter },
+      { $addFields: addFields },
+      { $project: project },
+      //{ $sort: { "gstInData.referenceTemplateId": 1 } },
+    ];
+    let templateOneData = await template1.aggregate(pipeline).toArray();
+    let templateTwoData = await template2.aggregate(pipeline2).toArray();
+    // return comapreData(templateOneData, templateTwoData)
+    return [...templateOneData, ...templateTwoData];
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while fetching fee payments." });
+  }
+};
+
+
+const getGstinMismatch = async (batchObjectId) => {
+  try {
+    const filter = {
+      batchId: batchObjectId,
+      isActive: true,
+      $and: [
+        { "gstInData.allMatched": false },
+        {
+          "$or": [
+            { "gstInData.igstMatched": false },
+            { "gstInData.cgstMatched": false },
+            { "gstInData.sgstMatched": false },
+            { "gstInData.invoiceNumberMatched": false },
+            { "gstInData.gstInMatched": false },
+            { "gstInData.probable": { "$exists": false } },
+            { "gstInData.manualMatched": { "$exists": false } },
+
+            // {"gstInData.dateMatched": false},
+          ]
+        }
+
+      ]
+    };
+    const addFields = {
+      gstInData: {
+        $filter: {
+          input: "$gstInData",
+          cond: {
+            $and: [
+              { $eq: ["$$this.allMatched", false] },
+              {
+                $or: [
+                  { $eq: ["$$this.igstMatched", false] },
+                  { $eq: ["$$this.cgstMatched", false] },
+                  { $eq: ["$$this.sgstMatched", false] },
+                  { $eq: ["$$this.invoiceNumberMatched", false] },
+                  { $eq: ["$$this.gstInMatched", false] },
+                  { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+                  { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+                  { $eq: [{ $ifNull: ["$$this.manualMatched", false] }, false] },
                   // { $eq: ["$$this.dateMatched", false] },
                 ]
               }
@@ -1502,6 +1761,32 @@ const probabilityExistsGstin = async (batchObjectId, gstIn, type) => {
   await template2.updateOne(filter, update);
 }
 
+const manualExistsGstin = async (batchObjectId, gstIn, type) => {
+  let update;
+  const filter = {
+    batchId: batchObjectId,
+    gstIn: gstIn,
+    isActive: true,
+    manualExists: true,
+  }
+  if (type == "next") {
+    update = {
+      "$set": {
+        submitted: true
+      }
+    }
+
+  } else {
+    update = {
+      "$set": {
+        manualExists: false
+      }
+    }
+  }
+
+  await template1.updateOne(filter, update);
+  await template2.updateOne(filter, update);
+}
 
 const submitData = async (batchObjectId, gstInList) => {
   const filter = {
@@ -1549,6 +1834,149 @@ const addBatchNumberMap = async (batchMatchData) => {
   await gstNumberData.insertOne(batchMatchData);
 }
 
+const getGstinData = async (batchObjectId, type, gstIn) => {
+  let filter = {}
+  let fields = {}
+  switch (type) {
+    case "manualmatch":
+      filter = {
+        batchId: batchObjectId,
+        isActive: true,
+        gstIn: gstIn,
+        $and: [
+          { "gstInData.allMatched": false },
+          {
+            "$or": [
+              { "gstInData.igstMatched": false },
+              { "gstInData.cgstMatched": false },
+              { "gstInData.sgstMatched": false },
+              { "gstInData.invoiceNumberMatched": false },
+              { "gstInData.gstInMatched": false },
+              { "gstInData.probable": { "$exists": false } },
+            ]
+          }
+
+        ]
+      }
+      fields = {
+        gstInData: {
+          $filter: {
+            input: "$gstInData",
+            cond: {
+              $and: [
+                { $eq: ["$$this.allMatched", false] },
+                {
+                  $or: [
+                    { $eq: ["$$this.igstMatched", false] },
+                    { $eq: ["$$this.cgstMatched", false] },
+                    { $eq: ["$$this.sgstMatched", false] },
+                    { $eq: ["$$this.invoiceNumberMatched", false] },
+                    { $eq: ["$$this.gstInMatched", false] },
+                    { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+
+                    // { $eq: ["$$this.dateMatched", false] },
+                  ]
+                }
+              ]
+            },
+          },
+        },
+      }
+      break;
+
+    default:
+      filter = {
+        batchId: batchObjectId,
+        isActive: true,
+        gstIn: gstIn,
+        $and: [
+          { "gstInData.allMatched": false },
+          {
+            "$or": [
+              { "gstInData.igstMatched": false },
+              { "gstInData.cgstMatched": false },
+              { "gstInData.sgstMatched": false },
+              { "gstInData.invoiceNumberMatched": false },
+              { "gstInData.gstInMatched": false },
+              { "gstInData.probable": { "$exists": false } },
+              { "gstInData.manualMatched": { "$exists": false } },
+
+              // {"gstInData.dateMatched": false},
+            ]
+          }
+
+        ]
+      };
+      fields = {
+        gstInData: {
+          $filter: {
+            input: "$gstInData",
+            cond: {
+              $and: [
+                { $eq: ["$$this.allMatched", false] },
+                {
+                  $or: [
+                    { $eq: ["$$this.igstMatched", false] },
+                    { $eq: ["$$this.cgstMatched", false] },
+                    { $eq: ["$$this.sgstMatched", false] },
+                    { $eq: ["$$this.invoiceNumberMatched", false] },
+                    { $eq: ["$$this.gstInMatched", false] },
+                    { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+                    { $eq: [{ $ifNull: ["$$this.probable", false] }, false] },
+                    { $eq: [{ $ifNull: ["$$this.manualMatched", false] }, false] },
+                    // { $eq: ["$$this.dateMatched", false] },
+                  ]
+                }
+              ]
+            },
+          },
+        },
+      };
+      break;
+  }
+  const project = {
+    _id: 0,
+    gstInData: 1,
+  };
+  // //console.log(filter);
+  const pipeline = [
+    { $match: filter },
+    { $addFields: fields },
+    { $project: project },
+  ];
+  let templateOneData = await template1.aggregate(pipeline).toArray();
+  let templateTwoData = await template2.aggregate(pipeline).toArray();
+  return [...templateOneData, ...templateTwoData];
+}
+
+const visitedData = async (batchObjectId, gstIn, type) => {
+  let update = {};
+  let filter = {
+    batchId: batchObjectId,
+    gstIn: gstIn,
+    isActive: true,
+  }
+  if (type == "manual") {
+    update = {
+      "$inc": {
+        manualVisited: 1
+      }
+    }
+
+
+  } else {
+    update = {
+      "$inc": {
+        probableVisited: 1
+      }
+    }
+
+
+  }
+  // console.log(filter);
+  await template1.updateOne(filter, update);
+  await template2.updateOne(filter, update);
+}
 
 
 module.exports = {
@@ -1585,5 +2013,11 @@ module.exports = {
   submitData,
   addBatchNumberMap,
   getMatchNumber,
-  updateNumbers
+  updateNumbers,
+  getGstinManual,
+  getGstinMismatch,
+  getGstinData,
+  manualExistsGstin,
+  visitedData,
+  getUnMatcheData
 };

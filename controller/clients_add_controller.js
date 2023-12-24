@@ -9,7 +9,7 @@
 // const addClient = async (req, res) => {
 //   try {
 //     let group = await groupRepo.groupData(req.params.group_id);
-//     // console.log(group)
+//     // //console.log(group)
 //     if (group.category != "school") {
 //       return errors.errorHandler({ type: "Page Not Found" }, res, 404);
 //     }

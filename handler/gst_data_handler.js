@@ -50,7 +50,7 @@ const gstData = (
 // ) => {
 //   let groupData = groupBy(data, "gstIn");
 //   const keysList = Object.keys(groupData);
-//   // ////console.log(keysList)
+//   // //////console.log(keysList)
 //   let insertData = [];
 //   keysList.forEach((element) => {
 //     insertData.push({
@@ -70,14 +70,14 @@ const gstData = (
 //       submitted: false
 //     });
 //   });
-//   // ////console.log(insertData)
+//   // //////console.log(insertData)
 //   gstRepo
 //     .gstData(insertData, type)
 //     .then((data) => {
 //       if (!data) {
 //         return errors.errorHandler("Data Not Processed", res, 500);
 //       }
-     
+
 //     })
 //     .catch((error) => {
 //       console.error("Error executing query:", error);
@@ -86,10 +86,11 @@ const gstData = (
 
 const addNew = async (res, data, month, year, type, clientObjectId, groupObjectId, batchObjectId, batchSize) => {
   try {
+    let importedData = data.length
     let groupData = groupBy(data, "gstIn");
     const keysList = Object.keys(groupData);
     const chunks = [];
-    
+
     // Divide the keys into chunks for parallel processing
     for (let i = 0; i < keysList.length; i += batchSize) {
       chunks.push(keysList.slice(i, i + batchSize));
@@ -114,11 +115,15 @@ const addNew = async (res, data, month, year, type, clientObjectId, groupObjectI
           isApproved: false,
           probabilityMatched: false,
           probabilityExists: true,
-          submitted: false
+          manualExists: true,
+          submitted: false,
+          totalDataImported: importedData,
+          probableVisited: 0,
+          manualVisited: 0
         });
       });
-      // console.log(insertData);
-      // console.log(insertData.length);
+      // //console.log(insertData);
+      // //console.log(insertData.length);
       // Perform bulk insertion
       const result = await gstRepo.gstData(insertData, type);
 
@@ -128,7 +133,7 @@ const addNew = async (res, data, month, year, type, clientObjectId, groupObjectI
     }));
 
     // Respond to the client or perform additional actions after batch insertion
-   res.status(201).json({ batchId: batchObjectId.toString() , importedData: data.length});
+    res.status(201).json({ batchId: batchObjectId.toString(), importedData: data.length });
   } catch (error) {
     console.error("Error executing batch insertion:", error);
     res.status(500).send("Error occurred during batch insertion");
@@ -186,7 +191,7 @@ const compareGstData = async (batchObjectId, res) => {
   try {
     const tolerance = 1;
     let commonMatched = 0;
-    let comparedPurchaseNumber = 0; 
+    let comparedPurchaseNumber = 0;
     let comparedTwoBNumber = 0;
     //get data from db
     // Get data from the database
@@ -195,7 +200,7 @@ const compareGstData = async (batchObjectId, res) => {
     // Group data by type
     const groupedTemplatedData = groupBy(gstData, "type");
     const commaRegExp = /,/g;
-  
+
     groupedTemplatedData["templateOne"].forEach(async (element) => {
       let tempTwoInvoiceData;
       let remainingData = [];
@@ -260,7 +265,7 @@ const compareGstData = async (batchObjectId, res) => {
                     templateOneInvoiceData.gstInMatched = true;
                     templateOneInvoiceData.invoiceNumberMatched = true;
                     templateOneInvoiceData.matched = true;
-                   
+
 
                     templateTwoInvoiceData = element; // template 2 object
                     templateTwoInvoiceData.sgstMatched = count.sgst;
@@ -283,9 +288,10 @@ const compareGstData = async (batchObjectId, res) => {
                     // pushing to array
                     templateOneData.push(templateOneInvoiceData);
                     templateTwoData.push(templateTwoInvoiceData);
-                    matched = true;
                     comparedPurchaseNumber += 1
                     comparedTwoBNumber += 1
+                    matched = true;
+                   
 
                     // if (count.count == 5) {
                     //   templateTwoInvoiceData.allMatched = true;
@@ -335,7 +341,7 @@ const compareGstData = async (batchObjectId, res) => {
               tempOneInoviceData[invoiceNumber].length >
               tempTwoInvoiceData[invoiceNumber].length
             ) {
-              checkOneGreaterOther(
+              let countNumber  = checkOneGreaterOther(
                 tempOneInoviceData,
                 tempTwoInvoiceData,
                 templateOneData,
@@ -343,22 +349,30 @@ const compareGstData = async (batchObjectId, res) => {
                 tolerance,
                 invoiceNumber,
                 commaRegExp,
-                commonMatched
+                commonMatched,
+                comparedPurchaseNumber,
+                comparedTwoBNumber
               );
+              comparedPurchaseNumber = countNumber.comparedPurchaseNumber
+              comparedTwoBNumber = countNumber.comparedTwoBNumber
             } else if (
               tempOneInoviceData[invoiceNumber].length <
               tempTwoInvoiceData[invoiceNumber].length
             ) {
-              checkOneGreaterOther(
+              let countNumber = checkOneGreaterOther(
                 tempOneInoviceData,
                 tempTwoInvoiceData,
                 templateOneData,
                 templateTwoData,
                 tolerance,
-                invoiceNumber, 
+                invoiceNumber,
                 commaRegExp,
-                commonMatched
+                commonMatched,
+                comparedPurchaseNumber,
+                comparedTwoBNumber
               );
+              comparedPurchaseNumber = countNumber.comparedPurchaseNumber
+              comparedTwoBNumber = countNumber.comparedTwoBNumber
             }
           } else {
             templateOneData.push(...tempOneInoviceData[invoiceNumber]);
@@ -401,11 +415,11 @@ const compareGstData = async (batchObjectId, res) => {
           }
         })(),
       ]);
-     
-     
+
+
     });
     return Promise.resolve({
-      comparedPurchaseNumber, 
+      comparedPurchaseNumber,
       comparedTwoBNumber
     });
   } catch (error) {
@@ -416,6 +430,8 @@ const compareGstData = async (batchObjectId, res) => {
   // return errors.render({}, res, 201);
 };
 
+
+
 function checkOneGreaterOther(
   tempOneInoviceData,
   tempTwoInvoiceData,
@@ -424,7 +440,9 @@ function checkOneGreaterOther(
   tolerance,
   invoiceNumber,
   regex,
-  commonMatched
+  commonMatched,
+  comparedPurchaseNumber,
+  comparedTwoBNumber
 ) {
   let templateOneInvoiceData;
   let templateTwoInvoiceData;
@@ -486,7 +504,7 @@ function checkOneGreaterOther(
     let date = tempOneInoviceData[invoiceNumber][0]["newDate"];
 
     tempOneInoviceData[invoiceNumber].forEach((item) => {
-      
+
       templateOneInvoiceData = item;
       templateOneInvoiceData.taxableValueMatched = count.taxableValue;
       templateOneInvoiceData.igstMatched = count.igst;
@@ -503,6 +521,8 @@ function checkOneGreaterOther(
       templateOneInvoiceData.matched = true;
       templateOneInvoiceData.templeteId = templeteId;
       templateOneData.push(templateOneInvoiceData);
+      comparedPurchaseNumber += 1;
+      // console.log(comparedPurchaseNumber, "added");
     });
     for (
       let index_1 = tempTwoInvoiceData[invoiceNumber].length - 1;
@@ -525,7 +545,7 @@ function checkOneGreaterOther(
       templateTwoInvoiceData.matched = true;
       templateTwoInvoiceData.referenceTemplateId = templeteId;
       templateTwoData.push(templateTwoInvoiceData);
-      comparedPurchaseNumber += 1
+      // console.log(comparedTwoBNumber);
       comparedTwoBNumber += 1
 
       // Use splice inside the for loop.
@@ -616,6 +636,7 @@ function checkOneGreaterOther(
       }
     });
   }
+  return { comparedPurchaseNumber, comparedTwoBNumber };
 }
 
 function checkAllEqual(element_1, element, tolerance) {
@@ -672,10 +693,10 @@ function checkAllEqual(element_1, element, tolerance) {
 
 const compareGstDataNew = async (batchObjectId, res) => {
   try {
-    const { comparedPurchaseNumber, comparedTwoBNumber } = await compareGstData(batchObjectId); // Wait for the comparison to finish
-
+  
+    let { comparedPurchaseNumber, comparedTwoBNumber } = await compareGstData(batchObjectId); // Wait for the comparison to finish
     // Send the response with status code 201 after the comparison is completed
-    res.status(201).json({ message: "Data comparison completed successfully.", purchaseRegister: comparedPurchaseNumber, twobRegister: comparedTwoBNumber});
+    res.status(201).json({ message: "Data comparison completed successfully.", purchaseRegister: comparedPurchaseNumber, twobRegister: comparedTwoBNumber });
   } catch (error) {
     // If there was an error during execution, send an error response
     res.status(500).json({ error: "An error occurred during data comparison." });
@@ -714,7 +735,7 @@ function areNumbersMatching(str1, str2) {
 }
 
 function isSpecialCase(str) {
-  // ////console.log(str)
+  // //////console.log(str)
   if (typeof str !== "string") {
     // Handle the case where str is not a string (e.g., return false or throw an error)
     return false;
@@ -803,7 +824,7 @@ function areNumbersApproximatelyEqual(num1, num2, tolerance) {
 
   // Calculate the absolute difference between the rounded numbers
   const diff = Math.abs(roundedNum1 - roundedNum2);
-  // ////console.log(diff)
+  // //////console.log(diff)
   // Compare the difference with the specified tolerance
   return diff <= tolerance;
 }
@@ -812,7 +833,7 @@ const getMatchedDataAll = (batchObjectId, res) => {
   gstRepo
     .getMatchedDataAll(batchObjectId)
     .then((data) => {
-      // ////console.log(data)
+      // //////console.log(data)
       let responseData = [];
       data.forEach((element) => {
         responseData.push(...element.gstInData);
@@ -841,7 +862,7 @@ const getMatchedDataAllMatched = (batchObjectId, res) => {
   gstRepo
     .getMatchedDataAllMatched(batchObjectId)
     .then((data) => {
-      // ////console.log(data)
+      // //////console.log(data)
       let responseData = [];
       data.forEach((element) => {
         responseData.push(...element.gstInData);
@@ -869,7 +890,7 @@ const getMatchedDataAllProbable = (batchObjectId, res) => {
   gstRepo
     .getMatchedDataAllProbable(batchObjectId)
     .then((data) => {
-      // ////console.log(data)
+      // //////console.log(data)
       let responseData = [];
       data.forEach((element) => {
         responseData.push(...element.gstInData);
@@ -897,7 +918,7 @@ const getMatchedDataAllManual = (batchObjectId, res) => {
   gstRepo
     .getMatchedDataAllManual(batchObjectId)
     .then((data) => {
-      // ////console.log(data)
+      // //////console.log(data)
       let responseData = [];
       data.forEach((element) => {
         responseData.push(...element.gstInData);
@@ -932,11 +953,11 @@ const getNotMached = (batchObjectId, res) => {
         responseData.push(...element.gstInData);
       });
       let allMisMatched = groupBy(responseData, "gstIn");
-      // ////console.log(allMisMatched)
+      // //////console.log(allMisMatched)
       const uniqueArray = responseData.filter((item, index, arr) => {
         return index === arr.findIndex((obj) => obj.gstIn === item.gstIn);
       });
-      // ////console.log(uniqueArray)
+      // //////console.log(uniqueArray)
       uniqueArray.forEach((element) => {
         let newUpdatedData = [];
         let newData = [];
@@ -949,7 +970,7 @@ const getNotMached = (batchObjectId, res) => {
         let keysList = [...new Set(Object.keys(templateId))];
         if (keysList.length > 0) {
           keysList.forEach((element1) => {
-            // ////console.log(element1)
+            // //////console.log(element1)
             if (referenceTemplateId[element1]) {
               newData.push(
                 ...templateId[element1],
@@ -963,7 +984,7 @@ const getNotMached = (batchObjectId, res) => {
             }
           });
         }
-        // ////console.log(newData)
+        // //////console.log(newData)
         newUpdatedData = [
           ...newData,
           ...Object.values(referenceTemplateId).flat(),
@@ -992,11 +1013,11 @@ const getManualMatched = (batchObjectId, res) => {
         responseData.push(...element.gstInData);
       });
       let allMisMatched = groupBy(responseData, "gstIn");
-      // ////console.log(allMisMatched)
+      // //////console.log(allMisMatched)
       const uniqueArray = responseData.filter((item, index, arr) => {
         return index === arr.findIndex((obj) => obj.gstIn === item.gstIn);
       });
-      // ////console.log(uniqueArray)
+      // //////console.log(uniqueArray)
       uniqueArray.forEach((element) => {
         let templateOne = groupBy(allMisMatched[element["gstIn"]], "type");
         newResponseData.push({
@@ -1041,12 +1062,12 @@ const getTemplateData = (batchObjectId, res, type, page) => {
   gstRepo
     .getTemplateData(batchObjectId, type, 100000, 50)
     .then((data) => {
-      // console.log(data);
+      // //console.log(data);
       let responseData = [];
       data.forEach((element) => {
         responseData.push(element.gstInData);
       });
-      // console.log(responseData.length)
+      // //console.log(responseData.length)
       // res.cacheControl('private', { maxAge: 600});
       return errors.render(responseData, res, 200);
     })
@@ -1065,7 +1086,7 @@ const moveData = (batchObjectId, res, type, register, matchedUserId) => {
     let templateType = groupBy(register, "type");
     let manualMatched = false;
     let templeteId = groupBy(templateType["templateOne"], "templeteId");
-    // ////console.log(templateType)
+    // //////console.log(templateType)
     templateType["templateOne"].forEach((element) => {
       if ("manualMatched" in element && element.manualMatched) {
         manualMatched = true
@@ -1096,7 +1117,7 @@ const moveData = (batchObjectId, res, type, register, matchedUserId) => {
           templeteId[helper.objectId(element["referenceTemplateId"])][0][
           "invoiceNumber"
           ];
-        // ////console.log(invoiceNumber)
+        // //////console.log(invoiceNumber)
         gstRepo.matchData(
           element.gstIn,
           element.editId,
@@ -1110,7 +1131,7 @@ const moveData = (batchObjectId, res, type, register, matchedUserId) => {
         );
       }
     });
-    errors.render({}, res, 200);
+    // errors.render({}, res, 200);
   } else {
     let templateType = groupBy(register, "type");
     templateType["templateOne"].forEach((element) => {
@@ -1138,13 +1159,6 @@ const moveData = (batchObjectId, res, type, register, matchedUserId) => {
       );
     });
   }
-
-  if (manualMatched) {
-    gstRepo.updateNumbers(batchObjectId, "mm")
-    
-  } else {
-    gstRepo.updateNumbers(batchObjectId, "mm")
-  }
   errors.render({}, res, 200);
 };
 
@@ -1152,7 +1166,7 @@ const getBatchId = (res, month, year, type, clientObjectId, groupObjectId) => {
   gstRepo
     .getBatchId(month, year, type, clientObjectId, groupObjectId)
     .then((data) => {
-      // ////console.log(data)
+      // //////console.log(data)
       if (data) {
         errors.render(data, res, 200);
       } else {
@@ -1209,7 +1223,7 @@ const probabilityAdd = async (res, batchObjectId) => {
             //now taking all invoive keys of gstin purchase and checking in 2b
             TempOneInvoiceKeys = Object.keys(tempOneInoviceData);
             TempTwoInvoiceKeys = Object.keys(tempTwoInvoiceData);
-           
+
             //now check for more close match
             for (let index = 0; index < TempOneInvoiceKeys.length; index++) {
               let templateOneInvoiceNumber = TempOneInvoiceKeys[index];
@@ -1285,7 +1299,7 @@ const probabilityAdd = async (res, batchObjectId) => {
       });
     });
   } catch (error) {
-    ////console.log(error);
+    //////console.log(error);
   }
 };
 
@@ -1409,7 +1423,7 @@ function checkOneGreaterOtherProablilty(
 ) {
   let templateOneInvoiceData;
   let templateTwoInvoiceData;
-  
+
   const taxableValue = calculateSumWithNaNHandling(
     tempOneInoviceData[invoiceNumber],
     "taxableValue", commaRegExp
@@ -1426,7 +1440,7 @@ function checkOneGreaterOtherProablilty(
     tempOneInoviceData[invoiceNumber],
     "sgst", commaRegExp
   );
-  // ////console.log(tempTwoInvoiceData, "invoiceNUmber", TwobInvoiceNumber )
+  // //////console.log(tempTwoInvoiceData, "invoiceNUmber", TwobInvoiceNumber )
   calculateSumWithNaNHandling(
     tempTwoInvoiceData[TwobInvoiceNumber],
     "taxableValue", commaRegExp
@@ -1663,24 +1677,83 @@ function highClosetMatchFuse(pattern, TempTwoInvoiceKey) {
 }
 
 
-const getGstin= (batchObjectId, res, groupObjectId) => {
+const getGstin = (batchObjectId, res, groupObjectId, type) => {
   let gstInList = []
-  gstRepo
-  .getGstin(batchObjectId, groupObjectId)
-  .then((data) => {
-    if (data) {
-      data.forEach(element => {
-        gstInList.push(element.gstIn)
-      });
-      // Create a Set to store unique values
-      const uniqueSet = new Set(gstInList);
-      // Convert the Set back to an array
-      const uniqueArray = Array.from(uniqueSet);
-      errors.render(uniqueArray, res, 200);
-    } else {
-      errors.render({}, res, 200);
-    }
-  });
+  switch (type) {
+    case "mismatch":
+      gstRepo
+        .getGstinMismatch(batchObjectId, groupObjectId)
+        .then((data) => {
+          if (data) {
+            data.forEach(element => {
+              gstInList.push(element.gstIn)
+            });
+            // Create a Set to store unique values
+            const uniqueSet = new Set(gstInList);
+            // Convert the Set back to an array
+            const uniqueArray = Array.from(uniqueSet);
+            errors.render(uniqueArray, res, 200);
+          } else {
+            errors.render([], res, 200);
+          }
+        });
+      break;
+    case "manualmatch":
+      gstRepo
+        .getGstinManual(batchObjectId, groupObjectId)
+        .then((data) => {
+          if (data) {
+            const gstInSet = new Set();
+            const uniqueData = data.filter(element => {
+              const key = element.gstIn;
+              if (!gstInSet.has(key)) {
+                gstInSet.add(key);
+                return true;
+              }
+              return false;
+            });
+            // console.log(uniqueData);
+            errors.render(uniqueData, res, 200);
+          } else {
+            errors.render([], res, 200);
+          }
+        });
+      break
+    default:
+      gstRepo
+        .getGstin(batchObjectId, groupObjectId)
+        .then((data) => {
+          if (data) {
+            const gstInSet = new Set();
+            const uniqueData = data.filter(element => {
+              const key = element.gstIn;
+              if (!gstInSet.has(key)) {
+                gstInSet.add(key);
+                return true;
+              }
+              return false;
+            });
+            // console.log(uniqueData);
+            errors.render(uniqueData, res, 200);
+          } else {
+            errors.render([], res, 200);
+          }
+          // if (data) {
+          //   data.forEach(element => {
+          //     gstInList.push(element)
+          //   });
+          //   // Create a Set to store unique values
+          //   const uniqueSet = new Set(gstInList);
+          //   // Convert the Set back to an array
+          //   const uniqueArray = Array.from(uniqueSet);
+          //   errors.render(uniqueArray, res, 200);
+          // } else {
+          //   errors.render({}, res, 200);
+          // }
+        });
+      break;
+  }
+
 }
 
 
@@ -1709,8 +1782,8 @@ const getGstin= (batchObjectId, res, groupObjectId) => {
 
 
 
-const approveGstData = async (batchObjectId, res, matchedUserId, type) => {
-  await gstRepo.approveGstData(batchObjectId, matchedUserId, type)
+const approveGstData = async (batchObjectId, res, matchedUserId, type, month, year) => {
+  await gstRepo.approveGstData(batchObjectId, matchedUserId)
 }
 
 function calculateSumWithNaNHandling(data, property, regex) {
@@ -1737,7 +1810,7 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //       gstRepo.getAllMisMatchedDataNew(batchObjectId, gstIn).then((data) => {
 //         gstRepo.updateProbability(batchObjectId, gstIn)
 //         let groupedTemplatedData = groupBy(data, "type");
-//         // ////console.log(groupedTemplatedData)
+//         // //////console.log(groupedTemplatedData)
 //         const commaRegExp = /,/g;
 //         if (groupedTemplatedData["templateOne"] && groupedTemplatedData["templateTwo"]) {
 //           groupedTemplatedData["templateOne"].forEach((element) => {
@@ -1750,7 +1823,7 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //             let TempTwoInvoiceKeys;
 //             let TempOneInvoiceKeys;
 //             // if (groupedTemplatedData["templateTwo"]) {
-              
+
 //             // }
 //             let gstTempTwoData = groupedTemplatedData["templateTwo"].find(
 //               (gstData) => gstData.gstIn == element.gstIn
@@ -1767,7 +1840,7 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //               //now taking all invoive keys of gstin purchase and checking in 2b
 //               TempOneInvoiceKeys = Object.keys(tempOneInoviceData);
 //               TempTwoInvoiceKeys = Object.keys(tempTwoInvoiceData);
-             
+
 //               //now check for more close match
 //               for (let index = 0; index < TempOneInvoiceKeys.length; index++) {
 //                 let templateOneInvoiceNumber = TempOneInvoiceKeys[index];
@@ -1784,7 +1857,7 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //                     } else if (tempOneInoviceData[templateOneInvoiceNumber].length < tempTwoInvoiceData[templateTwoInvoiceNumber].length) {
 //                       checkOneGreaterOtherProablilty(tempOneInoviceData, tempTwoInvoiceData, templateOneData, templateTwoData, tolerance, templateOneInvoiceNumber, templateTwoInvoiceNumber, TempTwoInvoiceKeys, TempOneInvoiceKeys, commaRegExp)
 //                     }else{
-                      
+
 //                     }
 //                   }
 //                 } else {
@@ -1818,7 +1891,7 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //               remainingData.push(...tempTwoInvoiceData[key]);
 //             }
 //             // now group remaing invoice data with invoice number
-  
+
 //             templateTwoData = [...templateTwoData, ...remainingData];
 //             let newTemplateDataOne = templateOneData.filter(
 //               (element_2) =>
@@ -1895,12 +1968,12 @@ function calculateSumWithNaNHandling(data, property, regex) {
 //             }
 //           });
 //         }
-       
+
 //         resolve();
 //       });
 //     });
 //   } catch (error) {
-//     ////console.log(error);
+//     //////console.log(error);
 //   }
 // };
 
@@ -1908,23 +1981,23 @@ const probabilityAddNewGstin = async (res, batchObjectId, gstIn) => {
   try {
     return await new Promise((resolve, reject) => {
       gstRepo.getAllMisMatchedDataNew(batchObjectId, gstIn).then((data) => {
-        // //console.log(data)
+        // ////console.log(data)
         gstRepo.updateProbability(batchObjectId, gstIn);
         let gstData = []
         data.forEach(element => {
           gstData.push(...element.gstInData)
         })
-        // //console.log(gstData)
+        // ////console.log(gstData)
         let groupedTemplatedData = groupBy(gstData, "type");
-        // //console.log(groupedTemplatedData)
+        // ////console.log(groupedTemplatedData)
         let sortResponseData = [];
         if (groupedTemplatedData["templateOne"] && groupedTemplatedData["templateTwo"]) {
           let tempOne = groupBy(groupedTemplatedData["templateOne"], "totalSumAmount")
           let tempTwo = groupBy(groupedTemplatedData["templateTwo"], "totalSumAmount")
           let keys = Object.keys(tempOne);
-          // //console.log(keys)
+          // ////console.log(keys)
           keys.forEach((element) => {
-            // //console.log(element)
+            // ////console.log(element)
             //geting all element of list
             if (tempOne[element] && tempTwo[element]) {
               tempOne[element].forEach(element1 => {
@@ -1939,31 +2012,31 @@ const probabilityAddNewGstin = async (res, batchObjectId, gstIn) => {
                 element1.cgstMatched = true
                 element1.gstInMatched = true
               });
-              sortResponseData.push(...tempOne[element],...tempTwo[element])
-            }else{
+              sortResponseData.push(...tempOne[element], ...tempTwo[element])
+            } else {
               if (tempOne[element]) {
                 sortResponseData.push(...tempOne[element])
               }
-              if (tempTwo[element]){
+              if (tempTwo[element]) {
                 sortResponseData.push(...tempTwo[element])
               }
-              
+
             }
           });
-        }else{
+        } else {
           if (groupedTemplatedData["templateOne"]) {
             sortResponseData.push(...groupedTemplatedData["templateOne"])
           }
-          if (groupedTemplatedData["templateTwo"]){
+          if (groupedTemplatedData["templateTwo"]) {
             sortResponseData.push(...groupedTemplatedData["templateTwo"])
           }
         }
-        // //console.log(sortResponseData)
+        // ////console.log(sortResponseData)
         let newDataGroup = groupBy(sortResponseData, "type");
-        // //console.log(newDataGroup)
+        // ////console.log(newDataGroup)
         if (newDataGroup["templateOne"]) {
           newDataGroup["templateOne"].forEach((element) => {
-            //console.log(element)
+            ////console.log(element)
             gstRepo.setProbabilityData(batchObjectId, element, "templateOne");
           });
         }
@@ -1977,119 +2050,124 @@ const probabilityAddNewGstin = async (res, batchObjectId, gstIn) => {
       });
     });
   } catch (error) {
-    //console.log(error);
+    ////console.log(error);
   }
 };
 
-const probabilityAddGstin = (batchObjectId, res, gstIn) => {
-  probabilityAddNewGstin(res, batchObjectId, gstIn)
-    .then(() => {
-      setTimeout(() => {
-        gstRepo.gstTempleteDataGstIn(batchObjectId, gstIn).then((data) => {
-          let responseData = [];
-          let newResponseData = [];
-          let sortResponseData = []
-          //match all doceoments
-          data.forEach((element) => {
-            responseData.push(...element.gstInData);
-          });
-          // let totalMap = groupBy(responseData, "totalSumAmount");
-          // let keys = Object.keys(totalMap);
-          // keys.forEach(element => {
-          //   //geting all element of list
-          //   let newTotal = totalMap[element]
-          //   let groupTemplateList = groupBy(newTotal, "type")
-          //   if (groupTemplateList["templateOne"] && groupTemplateList["templateTwo"]) {
-          //     groupTemplateList["templateOne"].forEach(element1 => {
-          //       element1.sgstMatched = true
-          //       element1.cgstMatched = true
-          //       element1.igstMatched = true
-          //     })
-          //     groupTemplateList["templateTwo"].forEach(element1 => {
-          //       element1.sgstMatched = true
-          //       element1.cgstMatched = true
-          //       element1.igstMatched = true
-          //     })
-          //     sortResponseData.push(...groupTemplateList["templateOne"])
-          //     sortResponseData.push(...groupTemplateList["templateTwo"])
-          //   }
-          //   else{
-          //     sortResponseData.push(...totalMap[element])
-          //   }
-          // });
-          let allMisMatched = groupBy(responseData, "gstIn");
-          // ////console.log(allMisMatched)
-          const uniqueArray = responseData.filter((item, index, arr) => {
-            return index === arr.findIndex((obj) => obj.gstIn === item.gstIn);
-          });
-          // ////console.log(uniqueArray)
-          uniqueArray.forEach((element) => {
-            let newUpdatedData = [];
-            let newData = [];
-            let templateOne = groupBy(allMisMatched[element["gstIn"]], "type");
-            let templateId = groupBy(templateOne["templateOne"], "templeteId");
-            let referenceTemplateId = groupBy(
-              templateOne["templateTwo"],
-              "referenceTemplateId"
-            );
-            let keysList = [...new Set(Object.keys(templateId))];
-            if (keysList.length > 0) {
-              keysList.forEach((element1) => {
-                // ////console.log(element1
-                if (referenceTemplateId[element1]) {
-                  newData.push(
-                    ...templateId[element1],
-                    ...referenceTemplateId[element1]
-                  );
-                  delete templateId[element1];
-                  delete referenceTemplateId[element1];
-                } else {
-                  newData.push(...templateId[element1]);
-                  delete templateId[element1];
-                }
-              });
-            }
-            // ////console.log(newData)
-            newUpdatedData = [
-              ...newData,
-              ...Object.values(referenceTemplateId).flat(),
-            ];
-            newResponseData.push({
-              gstIn: element.gstIn,
-              templateData: newUpdatedData,
-            });
-          });
-          // // res.cacheControl('private', { maxAge: 3600});
-          return errors.render(newResponseData, res, 200);
-        });
-      },150)
-      // Send the response with status code 201 after the Promise is resolved
-      //get updated json
-      
-    })
-    .catch((error) => {
-      // If there was an error during execution, send an error response
-      return res
-        .status(500)
-        .json({ error: "An error occurred during data comparison." });
-    });
+const probabilityAddGstin = async (batchObjectId, res, gstIn) => {
+  await probabilityAddNewGstin(res, batchObjectId, gstIn)
+  data = await gstRepo.gstTempleteDataGstIn(batchObjectId, gstIn)
+  let responseData = [];
+  let newResponseData = [];
+  //match all doceoments
+  data.forEach((element) => {
+    responseData.push(...element.gstInData);
+  });
+  let groupData = groupBy(responseData, "type");
+  if (groupData.hasOwnProperty("templateOne") &&
+    groupData.hasOwnProperty("templateTwo") &&
+    groupData["templateOne"] &&
+    groupData["templateTwo"]) {
+    let data = {
+      gstIn: gstIn,
+      templateData: responseData
+    }
+    // grouping by templateId and referenceTemplateId
+    errors.render([data], res, 200);
+  } else {
+    gstRepo.probabilityExistsGstin(batchObjectId, gstIn, "")
+    errors.render([], res, 200);
+  }
 };
 
 
-const probabilityExistsGstin = (batchObjectId, res, gstIn, type)=> {
+const probabilityExistsGstin = (batchObjectId, res, gstIn, type) => {
   gstRepo.probabilityExistsGstin(batchObjectId, gstIn, type).then((data) => {
     errors.render({}, res, 200);
 
   });
 }
-const getMatchNumber = async(res, batchObjectId) => {
-  await  gstRepo.getMatchNumber(batchObjectId).then((data) => {
-    // //console.log(data);
-   errors.render(data, res, 200);
+const getMatchNumber = async (res, batchObjectId) => {
+  await gstRepo.getMatchNumber(batchObjectId).then((data) => {
+    // ////console.log(data);
+    errors.render(data, res, 200);
   })
 }
 
+const getGstinData = async (batchObjectId, res, type, gstIn) => {
+  data = await gstRepo.getGstinData(batchObjectId, type, gstIn)
+  let gstInData = []
+  // let invoi1= []
+  // let invoi2 = []
+  data.forEach((gstData) => {
+    gstInData.push(...gstData.gstInData)
+  });
+  groupedData = groupBy(gstInData, "type")
+  if (groupedData.hasOwnProperty("templateOne") &&
+  groupedData.hasOwnProperty("templateTwo") &&
+  groupedData["templateOne"] &&
+  groupedData["templateTwo"]) {
+    // now group my invoice number
+    let templateOneInvoiceNumber = groupBy(groupedData["templateOne"], "newInvoiceNumber")
+    let templateTwoInvoiceNumber = groupBy(groupedData["templateTwo"], "newInvoiceNumber")
+    const keysListTempOne = Object.keys(templateOneInvoiceNumber);
+    const keysListTempTwo = Object.keys(templateTwoInvoiceNumber);
+    keysListTempOne.forEach(element => {
+      let sortId = helper.stringObjectId();
+      let invoiceNumber = matchedPairs(element, keysListTempTwo)
+      // //console.log(keysListTempTwo[invoiceNumber]);
+      if (templateTwoInvoiceNumber[invoiceNumber]) {
+        templateOneInvoiceNumber[element] = templateOneInvoiceNumber[element].map(innerElement => {
+          // Create a new object to avoid modifying the original object
+          return { ...innerElement, sortId };
+        });
+    
+        templateTwoInvoiceNumber[invoiceNumber].forEach(innerElement => {
+          // Modify the existing objects in the templateTwo array
+          innerElement.sortId = sortId;
+        });
+        // templateOneInvoiceNumber[element].forEach(element => {
+        //   element.sortId = sortId
+        // });
+        // templateTwoInvoiceNumber[invoiceNumber].forEach(element => {
+        //   element.sortId = sortId
+        // });
+      }
+    });
+    const tempOne = Object.values(templateOneInvoiceNumber).flat();
+    const tempTwo = Object.values(templateTwoInvoiceNumber).flat();
+    errors.render({ "templateOne": tempOne, "templateTwo": tempTwo }, res, 200);
+  } else if (groupedData.hasOwnProperty("templateOne")) {
+    gstRepo.manualExistsGstin(batchObjectId, gstIn, "")
+    errors.render({ "templateOne": groupedData["templateOne"], "templateTwo": [] }, res, 200);
+  } else if (groupedData.hasOwnProperty("templateTwo")) {
+    gstRepo.manualExistsGstin(batchObjectId, gstIn, "")
+    errors.render({ "templateOne": [], "templateTwo": groupedData["templateTwo"] }, res, 200);
+   
+  } else {
+    gstRepo.manualExistsGstin(batchObjectId, gstIn, "")
+    errors.render({ "templateOne": [], "templateTwo": [] }, res, 200);
+  }
+}
 
+const matchedPairs = (inputString, dataset2) => {
+  const bestMatch = dataset2.reduce((currentBest, matchString) => {
+    const similarity = natural.JaroWinklerDistance(inputString, matchString, 'ignoreCase');
+    return similarity > currentBest.similarity ? { string: matchString, similarity } : currentBest;
+  }, { string: null, similarity: 0 });
+
+  // Use a threshold for similarity, e.g., 0.90
+  if (bestMatch.similarity >= 0.905) {
+    return bestMatch.string;
+  } else {
+    return null;
+  }
+}
+
+const visitedData = (type, batchObjectId, gstIn) => {
+  gstRepo.visitedData(batchObjectId, gstIn)
+ 
+}
 
 module.exports = {
   gstData,
@@ -2111,5 +2189,7 @@ module.exports = {
   probabilityAddGstin,
   probabilityAddNewGstin,
   probabilityExistsGstin,
-  getMatchNumber
+  getMatchNumber,
+  getGstinData,
+  visitedData
 };

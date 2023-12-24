@@ -66,7 +66,7 @@ const gstRepo = require("../repo/gst_data_repo");
 //     csv
 //       .parseString(fileData, { headers: true })
 //       .on("data", (data) => {
-//         // console.log(data["DATE"])
+//         // //console.log(data["DATE"])
 //         data = trimObjectKeys(data);
 //         const parsed = moment(data["DATE"].trim(), dateFormats, true);
 //         if (parsed.isValid()) {
@@ -132,7 +132,7 @@ const gstRepo = require("../repo/gst_data_repo");
 //               delete data.CGST;
 //               delete data.SGST;
 //               let mergedData = _.merge({}, map, data);
-//               // console.log(mergedData)
+//               // //console.log(mergedData)
 //               results.push(mergedData);
 //         }
 //       })
@@ -481,7 +481,7 @@ const gstData = (req, res) => {
 //     gstRepo
 //       .checkExists(month, year, type, clientObjectId, groupObjectId, batchObjectId)
 //       .then((data1) => {
-//         // console.log("hi")
+//         // //console.log("hi")
 //         if (data1 > 0) {
 //           gstRepo.updateIsActiveFalse(
 //             month,
@@ -548,7 +548,7 @@ const gstData = (req, res) => {
 //               const mergedData = _.merge({}, map, data);
 //               results.push(mergedData);
 //             }
-//             // console.log(results.length)
+//             // //console.log(results.length)
 //             if (results.length === batchSize) {
 //               // Process the batch
 //               processBatch(req, res, results, batchObjectId);
@@ -560,7 +560,7 @@ const gstData = (req, res) => {
 //           },
           
 //         });
-//         console.log(transformStream)
+//         //console.log(transformStream)
 //         const readStream = new stream.Readable();
 //         readStream.push(req.file.buffer.toString('utf8'));
 //         readStream.push(null);
@@ -569,11 +569,11 @@ const gstData = (req, res) => {
 //         csvStream.pipe(transformStream);
 
 //         csvStream.on('end', async () => {
-//           console.log("hi")
+//           //console.log("hi")
 //           try {
 //             // Process any remaining data
 //             if (results.length > 0) {
-//               console.log(results.length);
+//               //console.log(results.length);
 //               await processBatch(req, res, results, batchObjectId);
 //               res.status(201).json({ batchId: batchObjectId.toString() });
 //             }
@@ -591,7 +591,7 @@ const gstData = (req, res) => {
 const processBatch = async (req, res, result, batchObjectId) => {
   // Your logic for processing a batch
   // For example, if inserting into a database
-  console.log(result.length);
+  // //console.log(result.length);
   try {
     const clientObjectId = helper.objectId(req.query.clientId);
     const groupObjectId = helper.objectId(req.query.groupId);
@@ -755,7 +755,7 @@ const getBatchId = (req, res) => {
   type = req.query.type;
   clientObjectId = helper.objectId(req.query.clientId);
   groupObjectId = helper.objectId(req.query.groupId);
-  // console.log(clientObjectId)
+  // //console.log(clientObjectId)
   gstHandler.getBatchId(res, month, year, type, clientObjectId, groupObjectId);
 };
 
@@ -766,18 +766,28 @@ const probabilityAdd = (req, res) => {
 
 const approveGstData = async (req, res) => {
   batchObjectId = helper.objectId(req.params.batch_id);
-  type = req.query.type
+  month = req.query.month;
+  year = req.query.year;
   const matchedUserId = req.userData["_id"];
-  await gstHandler.approveGstData(batchObjectId, res, matchedUserId, type);
+  await gstHandler.approveGstData(batchObjectId, res, matchedUserId, month, year);
   res.status(200).send("Data Has Been " + type);
 };
 
 const getGstin = (req, res) => {
   batchObjectId = helper.objectId(req.params.batch_id);
   let groupObjectId = helper.objectId(req.query.groupId);
-  gstHandler.getGstin(batchObjectId, res, groupObjectId);
+  let type = req.query.type
+  gstHandler.getGstin(batchObjectId, res, groupObjectId, type);
 };
 
+const getGstinData = (req, res) => {
+  batchObjectId = helper.objectId(req.params.batch_id);
+  let type = req.query.type
+  // //console.log(type);
+  let gstIn = req.query.gstIn
+  gstHandler.getGstinData(batchObjectId, res, type, gstIn);
+
+}
 const probabilityAddGstin = (req, res) => {
   batchObjectId = helper.objectId(req.params.batch_id);
   let gstIn = req.query.gstIn;
@@ -806,7 +816,7 @@ function trimObjectKeys(obj) {
       key = key.replace(/\./g, "_");
       if (obj.hasOwnProperty(key)) {
         const trimmedKey = key.trim();
-        // console.log(trimmedKey)
+        // //console.log(trimmedKey)
         trimmedObject[trimmedKey] = obj[key];
       }
     }
@@ -824,6 +834,17 @@ const deleteOldData = async (req, res) => {
   await gstRepo.updateIsActiveFalse(type, clientObjectId, groupObjectId, batchObjectId)
   res.status(200).send("Delete Old Template Data batchId " + req.params.batch_id +" type "+type);
 }
+
+const visitedData = async  (req, res) => {
+  type = req.query.type;
+  let gstIn = req.query.gstIn
+  
+  batchObjectId = helper.objectId(req.params.batch_id);
+  await gstRepo.visitedData(batchObjectId, gstIn, type)
+  res.status(200).send({});
+  
+}
+
 module.exports = {
   gstData,
   compareGstData,
@@ -837,5 +858,7 @@ module.exports = {
   probabilityAddGstin,
   probabilityExistsGstin,
   getMatchNumber,
-  deleteOldData
+  deleteOldData,
+  getGstinData,
+  visitedData
 };

@@ -15,11 +15,13 @@ router.get("/get/batchid", jwtVerify.authenticateToken, controller.gstDataContro
 router.put("/batch/:batch_id/probability/add", jwtVerify.authenticateToken, controller.gstDataController.probabilityAdd)
 router.put("/batch/:batch_id/approve/gst/data", jwtVerify.authenticateToken, controller.gstDataController.approveGstData)
 router.get("/batch/:batch_id/get/gstin", jwtVerify.authenticateToken, controller.gstDataController.getGstin)
+router.get("/batch/:batch_id/get/gstin/data", jwtVerify.authenticateToken, controller.gstDataController.getGstinData)
 router.put("/batch/:batch_id/probability/add/gstin", jwtVerify.authenticateToken, controller.gstDataController.probabilityAddGstin)
 router.put("/batch/:batch_id/probability/exists/gstin", jwtVerify.authenticateToken, controller.gstDataController.probabilityExistsGstin)
 // router.post("/groups/:group_id/add/client", jwtVerify.authenticateToken,controller.clientController.addClient )
 router.get("/batch/:batch_id/get/number", jwtVerify.authenticateToken, controller.gstDataController.getMatchNumber)
 router.put("/batch/:batch_id/delete/data", jwtVerify.authenticateToken, controller.gstDataController.deleteOldData)
-
+router.put("/batch/:batch_id/visited/data", jwtVerify.authenticateToken, controller.gstDataController.visitedData)
+router.get("/school/:images_id/get",controller.securityController.getImages)
 
 module.exports = router;
